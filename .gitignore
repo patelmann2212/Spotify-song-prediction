@@ -1,0 +1,28 @@
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Python caches and bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# IDEs and editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# Operating system files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Data files (large datasets)
+data/
+
