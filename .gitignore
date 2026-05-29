@@ -23,6 +23,49 @@ __pycache__/
 Thumbs.db
 desktop.ini
 
-# Data files (large datasets)
-data/
+# Python environment directories
+.venv/
+venv/
+env/
+ENV/
+
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Jupyter and notebooks
+.ipynb_checkpoints/
+
+# IDEs and editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# Data files
+# Keep processed datasets under version control, ignore raw/unshared data
+data/raw/
+!data/processed/
+
+# Trained models, plots and artifacts
+models/
+plots/
+*.pkl
+*.joblib
+
+# Environment / secrets
+.env
+
+# Test / build artifacts
+.pytest_cache/
+.mypy_cache/
+.coverage
+coverage.xml
+build/
+dist/
+pip-wheel-metadata/
 
