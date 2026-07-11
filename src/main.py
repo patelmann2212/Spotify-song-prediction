@@ -21,6 +21,10 @@ from src.preprocess import (
     save_scaler,
 )
 from src.recommend import ContentBasedRecommender
+from src.genre_recommender import GenreRecommender
+from src.artist_recommender import ArtistSimilarityRecommender
+from src.mood_recommender import MoodRecommender
+from src.weighted_recommender import WeightedRecommender
 
 
 def main():
@@ -101,6 +105,50 @@ def main():
         print(f"[Error] Model fitting failed: {e}")
         return
 
+    # 4.5. Initialize and fit Genre Recommendation Engine
+    print(
+        "\n[Step 2.5/3] Preparing Genre Recommendation Engine..."
+    )
+    genre_recommender = GenreRecommender(cleaned_data_path=train_path, model_dir=models_dir)
+    try:
+        genre_recommender.load_data_and_models()
+    except Exception as e:
+        print(f"[Error] Genre Recommender preparation failed: {e}")
+        return
+
+    # 4.6. Initialize and fit Artist Similarity Recommender
+    print(
+        "\n[Step 2.6/3] Preparing Artist Similarity Recommender..."
+    )
+    artist_recommender = ArtistSimilarityRecommender(cleaned_data_path=train_path, model_dir=models_dir)
+    try:
+        artist_recommender.load_data_and_models()
+    except Exception as e:
+        print(f"[Error] Artist Recommender preparation failed: {e}")
+        return
+
+    # 4.7. Initialize and prepare Mood Recommendation Engine
+    print(
+        "\n[Step 2.7/3] Preparing Mood Recommendation Engine..."
+    )
+    mood_recommender = MoodRecommender(cleaned_data_path=train_path)
+    try:
+        mood_recommender.load_data_and_classify()
+    except Exception as e:
+        print(f"[Error] Mood Recommender preparation failed: {e}")
+        return
+
+    # 4.8. Initialize and prepare Weighted Hybrid Recommendation Engine
+    print(
+        "\n[Step 2.8/3] Preparing Weighted Hybrid Recommendation Engine..."
+    )
+    weighted_recommender = WeightedRecommender(cleaned_data_path=train_path, model_dir=models_dir)
+    try:
+        weighted_recommender.load_engines()
+    except Exception as e:
+        print(f"[Error] Weighted Hybrid Recommender preparation failed: {e}")
+        return
+
     # Optionally load validation and test sets later for evaluation
     print(
         "\n[Evaluation Setup] Optionally loading validation and test sets for verification:"
@@ -129,25 +177,59 @@ def main():
         # for idx, row in sample_tracks.iterrows():
         #     print(f" • '{row['track_name']}' by {row['artists']}")
 
-        print("\nOptions: ")
-        print("  - Enter a song name (e.g. 'Blinding Lights' or 'Ocean Eyes')")
-        print("  - Type 'exit' to quit the application")
+        print("\nRecommendation Engines:")
+        print("  1. General Content-Based Recommender (across all genres)")
+        print("  2. Genre-Specific Recommender (restricts recommendations to the same genre)")
+        print("  3. Artist-Similarity Recommender (finds similar artists)")
+        print("  4. Mood-Based Recommender (finds top songs for a mood)")
+        print("  5. Weighted Hybrid Recommender (combines Audio, Artist, Genre, Popularity)")
+        print("  6. Exit")
 
-        query = input("\nEnter song name for recommendations: ").strip()
-
-        if query.lower() == "exit":
+        engine_choice = input("\nEnter choice (1-6): ").strip()
+        
+        if engine_choice == "6" or engine_choice.lower() == "exit":
             print(
                 "\nThank you for using Spotify Song Recommendation System! Keep rocking!"
             )
             print("=" * 60)
             break
 
-        if not query:
-            print("[Warning] Song name cannot be blank. Please try again.")
+        if engine_choice not in ["1", "2", "3", "4", "5"]:
+            print("[Warning] Invalid choice. Please select 1, 2, 3, 4, 5, or 6.")
             continue
 
-        # Get recommendations
-        rec_df, err = recommender.get_song_recommendations(query, top_n=5)
+        if engine_choice == "3":
+            query = input("\nEnter artist name for recommendations: ").strip()
+        elif engine_choice == "4":
+            query = input("\nEnter mood (Happy, Sad, Party, Chill) for recommendations: ").strip()
+        else:
+            query = input("\nEnter song name for recommendations: ").strip()
+
+        if not query:
+            if engine_choice == "3":
+                print("[Warning] Artist name cannot be blank. Please try again.")
+            elif engine_choice == "4":
+                print("[Warning] Mood cannot be blank. Please try again.")
+            else:
+                print("[Warning] Song name cannot be blank. Please try again.")
+            continue
+
+        # Get recommendations using the selected engine
+        if engine_choice == "1":
+            rec_df, err = recommender.get_song_recommendations(query, top_n=5)
+            note_str = "Note: Match index is calculated using mathematical Cosine Similarity of 9 audio features."
+        elif engine_choice == "2":
+            rec_df, err = genre_recommender.recommend_by_genre(query, top_n=5)
+            note_str = "Note: Match index is calculated using Cosine Similarity of audio features within the same genre."
+        elif engine_choice == "3":
+            rec_df, err = artist_recommender.get_similar_artists(query, top_n=5)
+            note_str = "Note: Match index is calculated using TF-IDF token overlap of artist names."
+        elif engine_choice == "4":
+            rec_df, err = mood_recommender.recommend_by_mood(query, top_n=5)
+            note_str = "Note: Songs are the top most popular tracks classified under the requested mood."
+        else:
+            rec_df, err = weighted_recommender.get_weighted_recommendations(query, top_n=10)
+            note_str = "Note: Match index combines 50% Audio Similarity, 20% Artist Similarity, 20% Genre Similarity, and 10% Popularity."
 
         if err:
             print(f"\n[Search Result] {err}")
@@ -156,32 +238,94 @@ def main():
 
         # Display recommendations in a high-fidelity tabular view
         print("\n" + "+" + "-" * 78 + "+")
-        print(f"| {'RECOMMENDED SONGS SIMILAR TO:':<76} |")
+        if engine_choice == "2" and not rec_df.empty:
+            genre_name = rec_df.iloc[0]["track_genre"]
+            title_str = f"RECOMMENDED SONGS IN GENRE '{genre_name.upper()}':"
+        elif engine_choice == "3":
+            title_str = f"RECOMMENDED ARTISTS SIMILAR TO '{query.upper()}':"
+        elif engine_choice == "4":
+            title_str = f"TOP POPULAR SONGS FOR MOOD '{query.upper()}':"
+        elif engine_choice == "5":
+            title_str = f"HYBRID WEIGHTED RECOMMENDATIONS FOR '{query.upper()}':"
+        else:
+            title_str = "RECOMMENDED SONGS SIMILAR TO:"
+            
+        print(f"| {title_str:<76} |") 
         print("+" + "-" * 78 + "+")
-        print(
-            f"| {'#':<3} | {'Track Name':<28} | {'Artist':<22} | {'Match Match':<17} |"
-        )
-        print("+" + "-" * 78 + "+")
 
-        for idx, row in rec_df.iterrows():
-            track_str = row["track_name"]
-            if len(track_str) > 26:
-                track_str = track_str[:23] + "..."
-
-            artist_str = row["artists"]
-            if len(artist_str) > 20:
-                artist_str = artist_str[:17] + "..."
-
-            match_pct = f"{row['similarity_score'] * 100:.1f}% Match"
-
+        if engine_choice == "3":
             print(
-                f"| {idx + 1:<3} | {track_str:<28} | {artist_str:<22} | {match_pct:<17} |"
+                f"| {'#':<3} | {'Artist Name':<53} | {'Match Match':<17} |"
             )
+            print("+" + "-" * 78 + "+")
+            for idx, row in rec_df.iterrows():
+                artist_str = row["artist"]
+                if len(artist_str) > 51:
+                    artist_str = artist_str[:48] + "..."
+                match_pct = f"{row['similarity_score'] * 100:.1f}% Match"
+                print(
+                    f"| {idx + 1:<3} | {artist_str:<53} | {match_pct:<17} |"
+                )
+        elif engine_choice == "4":
+            print(
+                f"| {'#':<3} | {'Track Name':<28} | {'Artist':<22} | {'Popularity':<17} |"
+            )
+            print("+" + "-" * 78 + "+")
+            for idx, row in rec_df.iterrows():
+                track_str = row["track_name"]
+                if len(track_str) > 26:
+                    track_str = track_str[:23] + "..."
+
+                artist_str = row["artists"]
+                if len(artist_str) > 20:
+                    artist_str = artist_str[:17] + "..."
+
+                pop_str = f"Popularity: {int(row['popularity'])}"
+
+                print(
+                    f"| {idx + 1:<3} | {track_str:<28} | {artist_str:<22} | {pop_str:<17} |"
+                )
+        elif engine_choice == "5":
+            print(
+                f"| {'#':<3} | {'Track Name':<28} | {'Artist':<22} | {'Hybrid Match':<17} |"
+            )
+            print("+" + "-" * 78 + "+")
+            for idx, row in rec_df.iterrows():
+                track_str = row["track_name"]
+                if len(track_str) > 26:
+                    track_str = track_str[:23] + "..."
+
+                artist_str = row["artists"]
+                if len(artist_str) > 20:
+                    artist_str = artist_str[:17] + "..."
+
+                match_pct = f"{row['final_score'] * 100:.1f}% Match"
+
+                print(
+                    f"| {idx + 1:<3} | {track_str:<28} | {artist_str:<22} | {match_pct:<17} |"
+                )
+        else:
+            print(
+                f"| {'#':<3} | {'Track Name':<28} | {'Artist':<22} | {'Match Match':<17} |"
+            )
+            print("+" + "-" * 78 + "+")
+            for idx, row in rec_df.iterrows():
+                track_str = row["track_name"]
+                if len(track_str) > 26:
+                    track_str = track_str[:23] + "..."
+
+                artist_str = row["artists"]
+                if len(artist_str) > 20:
+                    artist_str = artist_str[:17] + "..."
+
+                match_pct = f"{row['similarity_score'] * 100:.1f}% Match"
+
+                print(
+                    f"| {idx + 1:<3} | {track_str:<28} | {artist_str:<22} | {match_pct:<17} |"
+                )
 
         print("+" + "-" * 78 + "+")
-        print(
-            "Note: Match index is calculated using mathematical Cosine Similarity of 9 audio features."
-        )
+        print(note_str)
         print("-" * 80)
 
 

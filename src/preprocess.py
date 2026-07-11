@@ -80,7 +80,7 @@ def preprocess_dataset(df):
     # Combine original track identifiers with scaled features (keeping ONLY specified columns)
     meta_cols = [
         c
-        for c in ["track_id", "track_name", "artists", "album_name", "popularity"]
+        for c in ["track_id", "track_name", "artists", "album_name", "popularity", "track_genre", "valence", "energy"]
         if c in df.columns
     ]
     processed_df = pd.concat(
@@ -111,13 +111,13 @@ def split_dataset(df, train_size=0.8, val_size=0.1, test_size=0.1, random_state=
 
     print(f"Dataset split completed successfully:")
     print(
-        f"  - Train: {train_df.shape[0]} rows ({train_df.shape[0]/df.shape[0]*100:.1f}%)"
+        f"  - Train: {train_df.shape[0]} rows ({train_df.shape[0] / df.shape[0] * 100:.1f}%)"
     )
     print(
-        f"  - Validation: {val_df.shape[0]} rows ({val_df.shape[0]/df.shape[0]*100:.1f}%)"
+        f"  - Validation: {val_df.shape[0]} rows ({val_df.shape[0] / df.shape[0] * 100:.1f}%)"
     )
     print(
-        f"  - Test: {test_df.shape[0]} rows ({test_df.shape[0]/df.shape[0]*100:.1f}%)"
+        f"  - Test: {test_df.shape[0]} rows ({test_df.shape[0] / df.shape[0] * 100:.1f}%)"
     )
 
     # Reset indices to ensure consecutive integer indexing starting from 0
@@ -150,10 +150,19 @@ def save_scaler(scaler, output_path):
 
 if __name__ == "__main__":
     # Test block for testing preprocessing pipeline and dataset splitting
-    raw_path = os.path.join("data", "raw", "spotify_tracks.csv")
+    raw_path_root = os.path.join("data", "spotify_tracks.csv")
+    raw_path_raw = os.path.join("data", "raw", "spotify_tracks.csv")
+    
+    # Determine which raw file to load
+    if os.path.exists(raw_path_root):
+        raw_path = raw_path_root
+    else:
+        raw_path = raw_path_raw
+
     train_path = os.path.join("data", "processed", "train.csv")
     val_path = os.path.join("data", "processed", "validation.csv")
     test_path = os.path.join("data", "processed", "test.csv")
+    cleaned_path = os.path.join("data", "cleaned_spotify.csv")
 
     if os.path.exists(raw_path):
         # 1. Load data
@@ -162,19 +171,22 @@ if __name__ == "__main__":
         # 2. Preprocess data (Scaling occurs before splitting)
         processed_df, _, scaler = preprocess_dataset(df)
 
-        # 3. Split dataset (Duplicate removal has already happened during preprocessing)
+        # 3. Save the full cleaned dataset to data/cleaned_spotify.csv (Phase 2 structure)
+        save_processed_data(processed_df, cleaned_path)
+
+        # 4. Split dataset (Duplicate removal has already happened during preprocessing)
         train_df, val_df, test_df = split_dataset(processed_df)
 
-        # 4. Save processed datasets
+        # 5. Save processed datasets
         save_processed_data(train_df, train_path)
         save_processed_data(val_df, val_path)
         save_processed_data(test_df, test_path)
 
-        # 5. Optionally save the fitted scaler for later use in the shared models folder
+        # 6. Optionally save the fitted scaler for later use in the shared models folder
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         scaler_path = os.path.join(base_dir, "models", "scaler.pkl")
         save_scaler(scaler, scaler_path)
     else:
         print(
-            "Raw dataset not found. Run generate_dummy_data.py first to create a sample."
+            f"Raw dataset not found at {raw_path_root} or {raw_path_raw}. Please ensure you have spotify_tracks.csv."
         )
