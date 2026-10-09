@@ -113,6 +113,21 @@ class WeightedRecommender:
             print(f"[WeightedRecommender] Warning: Could not initialize KMeansRecommender ({e}).")
             self.kmeans_engine = None
 
+        # 5. Precompute static signals
+        print("[WeightedRecommender] Precomputing static signals...")
+        try:
+            self.dataset_artists_vecs = self.artist_engine.vectorizer.transform(self.df["artists"].astype(str))
+            self.pop_scaler = MinMaxScaler()
+            if "popularity" in self.df.columns:
+                self.pop_scaler.fit(self.df[["popularity"]])
+                self.dataset_pop_scores = self.pop_scaler.transform(self.df[["popularity"]]).flatten()
+            else:
+                self.dataset_pop_scores = np.zeros(len(self.df))
+        except Exception as e:
+            print(f"[WeightedRecommender] Precompute failed: {e}")
+            self.dataset_artists_vecs = None
+            self.dataset_pop_scores = None
+
         print("[WeightedRecommender] All sub-engines loaded successfully.\n")
 
     def get_weighted_recommendations(
@@ -213,7 +228,10 @@ class WeightedRecommender:
         # 6. Artist Name Similarity (TF-IDF token overlap)
         query_artist_str = str(query_song["artists"])
         query_artist_vec = self.artist_engine.vectorizer.transform([query_artist_str])
-        candidate_artists_vecs = self.artist_engine.vectorizer.transform(candidate_pool["artists"].astype(str))
+        if getattr(self, "dataset_artists_vecs", None) is not None:
+            candidate_artists_vecs = self.dataset_artists_vecs[candidate_pool.index]
+        else:
+            candidate_artists_vecs = self.artist_engine.vectorizer.transform(candidate_pool["artists"].astype(str))
         artist_similarities = cosine_similarity(query_artist_vec, candidate_artists_vecs)[0]
 
         # 7. Genre Profile Similarity
@@ -230,12 +248,15 @@ class WeightedRecommender:
             genre_similarities = np.zeros(len(candidate_pool))
 
         # 8. Normalized Popularity Score
-        pop_scaler = MinMaxScaler()
-        if "popularity" in self.df.columns:
-            pop_scaler.fit(self.df[["popularity"]])
-            pop_scores = pop_scaler.transform(candidate_pool[["popularity"]]).flatten()
+        if getattr(self, "dataset_pop_scores", None) is not None:
+            pop_scores = self.dataset_pop_scores[candidate_pool.index]
         else:
-            pop_scores = np.zeros(len(candidate_pool))
+            pop_scaler = MinMaxScaler()
+            if "popularity" in self.df.columns:
+                pop_scaler.fit(self.df[["popularity"]])
+                pop_scores = pop_scaler.transform(candidate_pool[["popularity"]]).flatten()
+            else:
+                pop_scores = np.zeros(len(candidate_pool))
 
         # 9. Combined Weighted Score
         w = active_weights

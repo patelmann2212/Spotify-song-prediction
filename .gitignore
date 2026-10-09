@@ -1,50 +1,53 @@
-# Virtual environments
-.venv/
-venv/
-env/
-ENV/
-
-# Python caches and bytecode
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
+*.so
+.Python
+backend/.venv/
+.venv/
+venv/
+env/
+pip-log.txt
+pip-delete-this-directory.txt
 
-# IDEs and editors
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE and OS
 .vscode/
 .idea/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.swp
-
-# Operating system files
 .DS_Store
 Thumbs.db
-desktop.ini
+*.swp
+*~
+*.bak
+*.tmp
 
-# Jupyter and notebooks
-.ipynb_checkpoints/
-
-# Data files
-# Keep processed datasets under version control, ignore raw/unshared data
-data/raw/
-!data/processed/
-
-# Trained models, plots, and artifacts
-models/
-plots/
-*.pkl
-*.joblib
-
-# Environment / secrets
-.env
-
-# Test / build artifacts
+# Caches
 .pytest_cache/
 .mypy_cache/
+.ruff_cache/
 .coverage
-coverage.xml
-build/
+htmlcov/
+
+# Node & Frontend (if run from root)
+node_modules/
 dist/
-pip-wheel-metadata/
+build/
+.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Models & Generated Artifacts
+# Note: models/scaler.pkl and kmeans models are kept if they are small and essential,
+# but usually large .pkl files can be ignored if they are easily regenerated.
+# Since the project regenerates models automatically on startup if missing, 
+# we can optionally ignore large ones. But we will leave them tracked if they 
+# were already committed unless they are too large.
+
+# Large generated models
+backend/models/*.pkl

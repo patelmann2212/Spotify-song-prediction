@@ -1,0 +1,29 @@
+.score-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.score-bar-track {
+  flex: 1;
+  height: 3px;
+  background: var(--surface3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.score-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--green);
+  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.score-bar-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--green);
+  min-width: 34px;
+  text-align: right;
+  flex-shrink: 0;
+}

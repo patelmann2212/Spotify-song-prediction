@@ -14,3 +14,13 @@ jupyter>=1.0.0
 
 # Optional utilities
 joblib>=1.2.0
+
+# API Framework
+fastapi
+uvicorn
+
+
+# Testing
+pytest
+httpx
+httpx2

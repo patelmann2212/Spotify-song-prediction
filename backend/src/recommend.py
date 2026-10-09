@@ -164,8 +164,10 @@ class ContentBasedRecommender:
                 {
                     "track_name": rec_song["track_name"],
                     "artists": rec_song["artists"],
-                    "album_name": rec_song.get("album_name", "N/A"),
-                    "similarity_score": rec_song["similarity_score"],
+                    "album_name": rec_song.get("album_name", ""),
+                    "track_genre": rec_song.get("track_genre", ""),
+                    "popularity": int(rec_song.get("popularity", 0)),
+                    "similarity_score": float(rec_song["similarity_score"]),
                 }
             )
 

@@ -1,0 +1,72 @@
+.results-section {
+  margin-top: 0.5rem;
+}
+
+/* Section header */
+.results-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  gap: 1rem;
+}
+
+.results-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.results-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--r-full);
+  background: var(--green-dim);
+  color: var(--green);
+  border: 1px solid rgba(29,185,84,0.25);
+}
+
+.results-engine-tag {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--r-full);
+  border: 1px solid var(--border);
+  background: var(--surface2);
+}
+
+/* Card list */
+.results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  list-style: none;
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-secondary);
+}
+
+.empty-state-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.empty-state p {
+  font-size: 0.95rem;
+}
+
+/* Footer note */
+.results-note {
+  margin-top: 1.25rem;
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
+  text-align: center;
+}

@@ -1,0 +1,140 @@
+/* ============================================================
+   SongCard — polished music card
+   ============================================================ */
+
+.song-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.9rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  transition: background var(--t-fast), border-color var(--t-fast), transform var(--t-fast), box-shadow var(--t-fast);
+  animation: slide-in 0.25s ease both;
+}
+
+@keyframes slide-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.song-card:hover {
+  background: var(--surface2);
+  border-color: var(--border-strong);
+  transform: translateX(3px);
+  box-shadow: var(--shadow-sm);
+}
+
+/* rank number */
+.card-rank {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  min-width: 1.5rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* artwork tile */
+.card-art {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--r-sm);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  overflow: hidden;
+  position: relative;
+}
+
+/* deterministic gradient per song based on first letter */
+.card-art-gradient {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: rgba(255,255,255,0.9);
+}
+
+/* text info */
+.card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.card-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 0.15rem;
+}
+
+.card-artist {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 0.4rem;
+}
+
+.card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.card-tag {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--r-full);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  background: var(--surface2);
+  text-transform: capitalize;
+}
+
+/* right side: score */
+.card-score {
+  flex-shrink: 0;
+  min-width: 80px;
+}
+
+/* artist card variant */
+.song-card.artist-card .card-art {
+  font-size: 1.4rem;
+}
+
+/* popularity dots */
+.popularity-dots {
+  display: flex;
+  gap: 2px;
+  margin-top: 0.3rem;
+}
+
+.pop-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--surface3);
+  transition: background var(--t-fast);
+}
+
+.pop-dot.filled {
+  background: var(--green);
+}
+
+@media (max-width: 480px) {
+  .card-score { display: none; }
+  .card-rank  { display: none; }
+}
