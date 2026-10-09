@@ -2,77 +2,83 @@ import os
 import sys
 import pickle
 
-# Ensure the root of the project is in python path
+# Ensure root of project is in python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 
 def save_all_models(models_dict, save_dir="models"):
     """
-    Demonstrates how to save all five Phase-2 recommendation models using pickle.
-    
+    Saves recommendation system models to disk using pickle.
+
     Parameters:
-    - models_dict: Dictionary containing the fitted model objects:
+    - models_dict: Dictionary containing fitted model objects:
       {
-        'scaler': MinMaxScaler object,
+        'scaler': MinMaxScaler object (fitted strictly on training set),
         'vectorizer': TfidfVectorizer object (for artists),
-        'audio_similarity': numpy array (Cosine similarity of audio features),
-        'artist_similarity': sparse TF-IDF matrix / array (Cosine similarity of artists),
-        'genre_similarity': numpy array (Cosine similarity of genre profiles)
+        'audio_similarity': numpy array (Cosine similarity of top audio tracks),
+        'artist_similarity': dict or sparse matrix (Artist similarity state),
+        'genre_similarity': dict or array (Genre profiles and similarity state)
       }
-    - save_dir: Directory where the pickle files will be saved.
+    - save_dir: Directory where pickle files will be saved.
     """
     os.makedirs(save_dir, exist_ok=True)
-    print("=== SAVING PHASE-2 MODELS ===")
-    
+    print("=== SAVING RECOMMENDATION SYSTEM MODELS ===")
+
     # 1. Save Scaler (MinMaxScaler)
-    scaler_path = os.path.join(save_dir, "scaler.pkl")
-    with open(scaler_path, "wb") as f:
-        pickle.dump(models_dict["scaler"], f)
-    print(f"[Save] Scaler saved to: {scaler_path}")
-    
+    if "scaler" in models_dict and models_dict["scaler"] is not None:
+        scaler_path = os.path.join(save_dir, "scaler.pkl")
+        with open(scaler_path, "wb") as f:
+            pickle.dump(models_dict["scaler"], f)
+        print(f"[Save] Scaler saved to: {scaler_path}")
+
     # 2. Save TF-IDF Vectorizer
-    vectorizer_path = os.path.join(save_dir, "artist_vectorizer.pkl")
-    with open(vectorizer_path, "wb") as f:
-        pickle.dump(models_dict["vectorizer"], f)
-    print(f"[Save] TF-IDF Vectorizer saved to: {vectorizer_path}")
-    
+    if "vectorizer" in models_dict and models_dict["vectorizer"] is not None:
+        vectorizer_path = os.path.join(save_dir, "artist_vectorizer.pkl")
+        with open(vectorizer_path, "wb") as f:
+            pickle.dump(models_dict["vectorizer"], f)
+        print(f"[Save] TF-IDF Vectorizer saved to: {vectorizer_path}")
+
     # 3. Save Audio Similarity Matrix
-    audio_sim_path = os.path.join(save_dir, "similarity.pkl")
-    with open(audio_sim_path, "wb") as f:
-        pickle.dump(models_dict["audio_similarity"], f)
-    print(f"[Save] Audio Similarity Matrix saved to: {audio_sim_path}")
-    
-    # 4. Save Artist Similarity Matrix
-    artist_sim_path = os.path.join(save_dir, "artist_similarity.pkl")
-    with open(artist_sim_path, "wb") as f:
-        pickle.dump(models_dict["artist_similarity"], f)
-    print(f"[Save] Artist Similarity Matrix saved to: {artist_sim_path}")
-    
-    # 5. Save Genre Similarity Matrix
-    genre_sim_path = os.path.join(save_dir, "genre_recommender.pkl")
-    with open(genre_sim_path, "wb") as f:
-        pickle.dump(models_dict["genre_similarity"], f)
-    print(f"[Save] Genre Similarity Matrix saved to: {genre_sim_path}")
-    
+    if "audio_similarity" in models_dict and models_dict["audio_similarity"] is not None:
+        audio_sim_path = os.path.join(save_dir, "similarity.pkl")
+        with open(audio_sim_path, "wb") as f:
+            pickle.dump(models_dict["audio_similarity"], f)
+        print(f"[Save] Audio Similarity Matrix saved to: {audio_sim_path}")
+
+    # 4. Save Artist Similarity State
+    if "artist_similarity" in models_dict and models_dict["artist_similarity"] is not None:
+        artist_sim_path = os.path.join(save_dir, "artist_similarity.pkl")
+        with open(artist_sim_path, "wb") as f:
+            pickle.dump(models_dict["artist_similarity"], f)
+        print(f"[Save] Artist Similarity Matrix/State saved to: {artist_sim_path}")
+
+    # 5. Save Genre Similarity State
+    if "genre_similarity" in models_dict and models_dict["genre_similarity"] is not None:
+        genre_sim_path = os.path.join(save_dir, "genre_recommender.pkl")
+        with open(genre_sim_path, "wb") as f:
+            pickle.dump(models_dict["genre_similarity"], f)
+        print(f"[Save] Genre Similarity State saved to: {genre_sim_path}")
+
     print("All models serialized successfully!\n")
 
 
 def load_all_models(save_dir="models"):
     """
-    Demonstrates how to load all five Phase-2 recommendation models using pickle.
-    
+    Loads all saved recommendation models from disk.
+
     Returns:
     - Dict of loaded models:
       {
-        'scaler': Loaded MinMaxScaler,
+        'scaler': Loaded MinMaxScaler (fitted on train split),
         'vectorizer': Loaded TfidfVectorizer,
         'audio_similarity': Loaded audio similarity matrix,
-        'artist_similarity': Loaded artist similarity matrix,
-        'genre_similarity': Loaded genre similarity matrix
+        'artist_similarity': Loaded artist similarity matrix/dict,
+        'genre_similarity': Loaded genre similarity matrix/dict
       }
     """
-    print("=== LOADING PHASE-2 MODELS ===")
+    print("=== LOADING RECOMMENDATION SYSTEM MODELS ===")
     loaded_models = {}
-    
+
     # 1. Load Scaler
     scaler_path = os.path.join(save_dir, "scaler.pkl")
     if os.path.exists(scaler_path):
@@ -81,96 +87,58 @@ def load_all_models(save_dir="models"):
         print(f"[Load] Scaler loaded from: {scaler_path}")
     else:
         print(f"[Warning] Scaler pickle file not found at {scaler_path}")
-        
-    # 2. Load TF-IDF Vectorizer (for artist names)
+
+    # 2. Load TF-IDF Vectorizer
     vectorizer_path = os.path.join(save_dir, "artist_vectorizer.pkl")
     if os.path.exists(vectorizer_path):
         with open(vectorizer_path, "rb") as f:
             loaded_models["vectorizer"] = pickle.load(f)
         print(f"[Load] TF-IDF Vectorizer loaded from: {vectorizer_path}")
-    else:
-        # Note: If separate vectorizer.pkl is not created yet, 
-        # it is often bundled inside artist_similarity.pkl or can be fit on the fly.
-        print(f"[Load] TF-IDF Vectorizer standalone file not found, trying bundled dictionary...")
-    
+
     # 3. Load Audio Similarity Matrix
     audio_sim_path = os.path.join(save_dir, "similarity.pkl")
     if os.path.exists(audio_sim_path):
         with open(audio_sim_path, "rb") as f:
             loaded_models["audio_similarity"] = pickle.load(f)
         print(f"[Load] Audio Similarity Matrix loaded from: {audio_sim_path}")
-    else:
-        print(f"[Warning] Audio Similarity Matrix pickle file not found at {audio_sim_path}")
-        
-    # 4. Load Artist Similarity Matrix (or bundled dictionary)
+
+    # 4. Load Artist Similarity Matrix / bundled dictionary
     artist_sim_path = os.path.join(save_dir, "artist_similarity.pkl")
     if os.path.exists(artist_sim_path):
         with open(artist_sim_path, "rb") as f:
             data = pickle.load(f)
-            # Handle if it was saved as a bundled dictionary (as in artist_recommender.py)
             if isinstance(data, dict):
                 loaded_models["artist_similarity"] = data.get("tfidf_matrix")
-                loaded_models["vectorizer"] = data.get("vectorizer")
+                if "vectorizer" not in loaded_models or loaded_models["vectorizer"] is None:
+                    loaded_models["vectorizer"] = data.get("vectorizer")
                 print(f"[Load] Artist Similarity tfidf_matrix & Vectorizer extracted from bundled dictionary: {artist_sim_path}")
             else:
                 loaded_models["artist_similarity"] = data
                 print(f"[Load] Artist Similarity Matrix loaded from: {artist_sim_path}")
-    else:
-        print(f"[Warning] Artist Similarity Matrix pickle file not found at {artist_sim_path}")
-        
-    # 5. Load Genre Similarity Matrix (or bundled dictionary)
+
+    # 5. Load Genre Similarity Matrix / bundled dictionary
     genre_sim_path = os.path.join(save_dir, "genre_recommender.pkl")
     if os.path.exists(genre_sim_path):
         with open(genre_sim_path, "rb") as f:
             data = pickle.load(f)
-            # Handle if it was saved as a bundled dictionary (as in genre_recommender.py)
             if isinstance(data, dict):
                 loaded_models["genre_similarity"] = data.get("genre_similarity_matrix")
                 print(f"[Load] Genre Similarity Matrix extracted from bundled dictionary: {genre_sim_path}")
             else:
                 loaded_models["genre_similarity"] = data
                 print(f"[Load] Genre Similarity Matrix loaded from: {genre_sim_path}")
-    else:
-        print(f"[Warning] Genre Similarity Matrix pickle file not found at {genre_sim_path}")
-        
+
     print("All available models deserialized successfully!\n")
     return loaded_models
 
 
 if __name__ == "__main__":
-    # Test script block to verify serialization and deserialization
     print("============================================================")
     print("       MODEL SERIALIZATION & DESERIALIZATION TESTING        ")
     print("============================================================")
-    
-    # 1. Attempt to load current models from disk (demonstrating loading)
     models = load_all_models()
-    
-    # 2. Re-save them (demonstrating saving)
     if models:
-        # Check if vectorizer is present
-        if "vectorizer" not in models or models["vectorizer"] is None:
-            # Create a mock vectorizer if none exists for demonstration
-            from sklearn.feature_extraction.text import TfidfVectorizer
-            mock_vec = TfidfVectorizer()
-            mock_vec.fit(["lata mangeshkar", "kishore kumar", "the beatles"])
-            models["vectorizer"] = mock_vec
-            
-        # Ensure we have all items
-        save_dict = {
-            "scaler": models.get("scaler"),
-            "vectorizer": models.get("vectorizer"),
-            "audio_similarity": models.get("audio_similarity"),
-            "artist_similarity": models.get("artist_similarity"),
-            "genre_similarity": models.get("genre_similarity")
-        }
-        
-        # Save them back (will overwrite or create artist_vectorizer.pkl)
-        save_all_models(save_dict)
-        
-        # Re-load to make sure everything works
-        reloaded = load_all_models()
-        
+        print(f"Loaded {len(models)} model components successfully.")
     else:
-        print("Note: Run main.py first to generate the model files on disk.")
+        print("Note: Run main.py or preprocess.py first to generate model files on disk.")
     print("============================================================")
