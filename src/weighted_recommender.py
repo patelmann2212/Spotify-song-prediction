@@ -101,10 +101,48 @@ class WeightedRecommender:
         print("[Hybrid] Calculating similarities and ranking candidate songs...")
 
         # 2. Audio Feature Similarity (50% Weight)
-        query_audio = query_song[self.scaled_feature_cols].values.astype(float).reshape(1, -1)
-        candidate_audios = self.df[self.scaled_feature_cols].values.astype(float)
-        audio_similarities = cosine_similarity(query_audio, candidate_audios)[0]
+        #
+        # find_song() returns a formatted Series containing metadata columns,
+        # so it may not contain the scaled audio-feature columns.
+        # Retrieve the complete original row from self.df using track_id.
 
+        query_track_id = query_song["track_id"]
+
+        query_rows = self.df[self.df["track_id"] == query_track_id]
+
+        if query_rows.empty:
+            return None, f"Could not retrieve full feature data for track_id '{query_track_id}'."
+
+        query_full_row = query_rows.iloc[0]
+
+        # Validate that scaled audio features are available
+        if not self.scaled_feature_cols:
+            return None, (
+                "No scaled audio feature columns found in the dataset. "
+                "Expected columns such as scaled_energy, scaled_danceability, "
+                "scaled_valence, etc."
+            )
+
+        # Extract complete query feature vector
+        query_audio = (
+            query_full_row[self.scaled_feature_cols]
+            .values
+            .astype(float)
+            .reshape(1, -1)
+        )
+
+        # Extract candidate feature matrix
+        candidate_audios = (
+            self.df[self.scaled_feature_cols]
+            .values
+            .astype(float)
+        )
+
+        audio_similarities = cosine_similarity(
+            query_audio,
+            candidate_audios
+        )[0]
+        
         # 3. Artist Name Similarity (20% Weight)
         query_artist_str = str(query_song["artists"])
         query_artist_vec = self.artist_engine.vectorizer.transform([query_artist_str])

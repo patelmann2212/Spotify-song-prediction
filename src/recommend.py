@@ -11,6 +11,20 @@ from sklearn.metrics.pairwise import cosine_similarity
 from src.song_lookup import find_song
 
 
+REQUIRED_SCALED_FEATURES = [
+    "scaled_explicit",
+    "scaled_danceability",
+    "scaled_energy",
+    "scaled_loudness",
+    "scaled_speechiness",
+    "scaled_acousticness",
+    "scaled_instrumentalness",
+    "scaled_liveness",
+    "scaled_valence",
+    "scaled_tempo",
+]
+
+
 class ContentBasedRecommender:
     def __init__(self, processed_df):
         """
@@ -18,6 +32,19 @@ class ContentBasedRecommender:
         Expected to have 'track_name', 'artists', and scaled feature columns.
         """
         self.df = processed_df.reset_index(drop=True)
+
+        # Validate that the processed dataframe contains the required scaled features
+        missing_features = [
+            col for col in REQUIRED_SCALED_FEATURES if col not in self.df.columns
+        ]
+        if missing_features:
+            raise ValueError(
+                f"ContentBasedRecommender requires a preprocessed DataFrame containing scaled_* columns. "
+                f"Missing required scaled feature columns: {missing_features}. "
+                f"Expected features: {REQUIRED_SCALED_FEATURES}. "
+                f"Please ensure preprocess.py has generated the preprocessed dataset."
+            )
+
         # Extract columns starting with 'scaled_' as our feature matrix
         self.feature_cols = [
             col for col in self.df.columns if col.startswith("scaled_")
@@ -83,9 +110,18 @@ class ContentBasedRecommender:
         Uses deterministic candidate ranking and eliminates row-order bias.
         """
         # Resolve track deterministically using song_lookup
-        song_meta, err = find_song(self.df, query_song, artist_name)
+        found_song, err = find_song(self.df, query_song, artist_name)
         if err:
             return None, err
+
+        # Obtain the selected track's track_id and re-resolve against self.df
+        # to guarantee the full row contains all required scaled audio features
+        track_id = found_song["track_id"]
+        matched_rows = self.df[self.df["track_id"] == track_id]
+        if matched_rows.empty:
+            return None, "Selected song could not be found in the recommendation dataset."
+
+        song_meta = matched_rows.iloc[0]
 
         print(
             f"\nFound song: '{song_meta['track_name']}' by {song_meta['artists']} "
@@ -94,7 +130,12 @@ class ContentBasedRecommender:
         print("Calculating recommendations...")
 
         # Extract the query song's feature vector and reshape to (1, D)
-        query_vector = song_meta[self.feature_cols].values.astype(float).reshape(1, -1)
+        query_vector = (
+            song_meta[self.feature_cols]
+            .values
+            .astype(float)
+            .reshape(1, -1)
+        )
 
         # Compute cosine similarity between this song and all songs in dataset on-the-fly
         similarity_scores = cosine_similarity(query_vector, self.features)[0]

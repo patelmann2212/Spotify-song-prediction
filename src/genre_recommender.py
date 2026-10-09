@@ -203,7 +203,35 @@ class GenreRecommender:
             return None, f"No other tracks found in the genre '{query_genre}' for recommendations."
 
         # Extract audio features for similarity calculation
-        query_features = song_meta[self.scaled_feature_cols].values.astype(float).reshape(1, -1)
+        # Retrieve the complete original row because find_song()
+        # returns a metadata-only formatted row.
+        query_track_id = song_meta["track_id"]
+
+        query_rows = self.df[
+            self.df["track_id"] == query_track_id
+        ]
+
+        if query_rows.empty:
+            return None, (
+                f"Could not retrieve full feature data for "
+                f"track_id '{query_track_id}'."
+            )
+
+        query_full_row = query_rows.iloc[0]
+
+        # Make sure scaled audio features exist
+        if not self.scaled_feature_cols:
+            return None, (
+                "No scaled audio feature columns found in the dataset. "
+                "Expected columns beginning with 'scaled_'."
+            )
+
+        query_features = (
+            query_full_row[self.scaled_feature_cols]
+            .values
+            .astype(float)
+            .reshape(1, -1)
+        )        
         candidate_features = genre_df[self.scaled_feature_cols].values.astype(float)
 
         similarities = cosine_similarity(query_features, candidate_features)[0]
