@@ -21,33 +21,33 @@ Rather than relying on closed-box collaborative filtering, this system transpare
 ```mermaid
 flowchart TD
     %% Frontend Subgraph
-    subgraph Frontend [React Frontend (Vite)]
-        UI[User Interface]
-        State[React State & Theme Context]
-        API_Client[Fetch API Adapter]
+    subgraph Frontend ["React Frontend (Vite)"]
+        UI["User Interface"]
+        State["React State & Theme Context"]
+        API_Client["Fetch API Adapter"]
     end
 
     %% Backend Subgraph
-    subgraph Backend [FastAPI Backend]
-        API_Router[FastAPI Router\n/recommend, /search]
-        EngineMgr[Lifespan Context Manager\nLoads models to memory]
+    subgraph Backend ["FastAPI Backend"]
+        API_Router["FastAPI Router\n/recommend, /search"]
+        EngineMgr["Lifespan Context Manager\nLoads models to memory"]
         
         subgraph Recommendation Engines
-            Hybrid[Weighted Hybrid Engine]
-            Content[Content-Based (Audio) Engine]
-            Artist[Artist Similarity Engine]
-            Genre[Genre-Based Engine]
-            Mood[Mood-Based Engine]
+            Hybrid["Weighted Hybrid Engine"]
+            Content["Content-Based (Audio) Engine"]
+            Artist["Artist Similarity Engine"]
+            Genre["Genre-Based Engine"]
+            Mood["Mood-Based Engine"]
         end
         
-        Lookup[Song Resolution Logic]
+        Lookup["Song Resolution Logic"]
     end
 
     %% Storage Subgraph
-    subgraph Storage [Local Storage]
-        Models[(Serialized ML Models\n*.pkl)]
-        Catalog[(Searchable Catalog\ncleaned_spotify.csv)]
-        Eval[(Train/Val/Test Splits\ntrain.csv etc.)]
+    subgraph Storage ["Local Storage"]
+        Models[("Serialized ML Models\n*.pkl")]
+        Catalog[("Searchable Catalog\ncleaned_spotify.csv")]
+        Eval[("Train/Val/Test Splits\ntrain.csv etc.")]
     end
 
     UI <--> |Input / Render| State
@@ -58,6 +58,7 @@ flowchart TD
     Lookup --> |Resolved Song DataFrame| Recommendation Engines
     EngineMgr -.-> |Preloads| Recommendation Engines
     Recommendation Engines <--> |Reads| Catalog
+
     EngineMgr <--> |Deserializes / Regenerates| Models
     Models -.-> |Fitted on| Eval
 ```
@@ -110,21 +111,21 @@ When a user searches for a song like `"Blinding Lights"`, the `src/song_lookup.p
 
 ```mermaid
 flowchart LR
-    Raw[(spotify_tracks.csv)] --> Clean[Clean & Deduplicate]
-    Clean --> Split[GroupShuffleSplit\n80 / 10 / 10]
+    Raw[("spotify_tracks.csv")] --> Clean["Clean & Deduplicate"]
+    Clean --> Split["GroupShuffleSplit\n80 / 10 / 10"]
     
-    Split --> Train[(train.csv)]
-    Split --> Val[(validation.csv)]
-    Split --> Test[(test.csv)]
+    Split --> Train[("train.csv")]
+    Split --> Val[("validation.csv")]
+    Split --> Test[("test.csv")]
     
-    Train --> FitScaler[Fit MinMaxScaler]
-    Train --> FitModels[Fit KMeans & TF-IDF]
+    Train --> FitScaler["Fit MinMaxScaler"]
+    Train --> FitModels["Fit KMeans & TF-IDF"]
     
     FitScaler -.-> |Transform| Train
     FitScaler -.-> |Transform| Val
     FitScaler -.-> |Transform| Test
     
-    Clean -.-> |Transform Using Train Scaler| Catalog[(cleaned_spotify.csv\nSearchable Catalog)]
+    Clean -.-> |Transform Using Train Scaler| Catalog[("cleaned_spotify.csv\nSearchable Catalog")]
     
     style FitScaler fill:#1db954,stroke:#000,stroke-width:2px,color:#fff
     style Catalog fill:#7c3aed,stroke:#000,stroke-width:2px,color:#fff
