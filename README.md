@@ -32,7 +32,7 @@ flowchart TD
         API_Router["FastAPI Router\n/recommend, /search"]
         EngineMgr["Lifespan Context Manager\nLoads models to memory"]
         
-        subgraph Recommendation Engines
+        subgraph RecommendationEngines ["Recommendation Engines"]
             Hybrid["Weighted Hybrid Engine"]
             Content["Content-Based (Audio) Engine"]
             Artist["Artist Similarity Engine"]
@@ -55,9 +55,9 @@ flowchart TD
     API_Client <-->|HTTP POST /recommend| API_Router
     
     API_Router <--> |Query & Filters| Lookup
-    Lookup --> |Resolved Song DataFrame| Recommendation Engines
-    EngineMgr -.-> |Preloads| Recommendation Engines
-    Recommendation Engines <--> |Reads| Catalog
+    Lookup --> |Resolved Song DataFrame| RecommendationEngines
+    EngineMgr -.-> |Preloads| RecommendationEngines
+    RecommendationEngines <--> |Reads| Catalog
 
     EngineMgr <--> |Deserializes / Regenerates| Models
     Models -.-> |Fitted on| Eval
