@@ -59,6 +59,19 @@ def save_all_models(models_dict, save_dir="models"):
             pickle.dump(models_dict["genre_similarity"], f)
         print(f"[Save] Genre Similarity State saved to: {genre_sim_path}")
 
+    # 6. Save KMeans Model and Scaler
+    if "kmeans_model" in models_dict and models_dict["kmeans_model"] is not None:
+        import joblib
+        kmeans_path = os.path.join(save_dir, "kmeans_model.pkl")
+        joblib.dump(models_dict["kmeans_model"], kmeans_path)
+        print(f"[Save] KMeans Model saved to: {kmeans_path}")
+
+    if "kmeans_scaler" in models_dict and models_dict["kmeans_scaler"] is not None:
+        import joblib
+        kmeans_scaler_path = os.path.join(save_dir, "kmeans_scaler.pkl")
+        joblib.dump(models_dict["kmeans_scaler"], kmeans_scaler_path)
+        print(f"[Save] KMeans Scaler saved to: {kmeans_scaler_path}")
+
     print("All models serialized successfully!\n")
 
 
@@ -127,6 +140,19 @@ def load_all_models(save_dir="models"):
             else:
                 loaded_models["genre_similarity"] = data
                 print(f"[Load] Genre Similarity Matrix loaded from: {genre_sim_path}")
+
+    # 6. Load KMeans Model and Scaler
+    kmeans_path = os.path.join(save_dir, "kmeans_model.pkl")
+    if os.path.exists(kmeans_path):
+        import joblib
+        loaded_models["kmeans_model"] = joblib.load(kmeans_path)
+        print(f"[Load] KMeans Model loaded from: {kmeans_path}")
+
+    kmeans_scaler_path = os.path.join(save_dir, "kmeans_scaler.pkl")
+    if os.path.exists(kmeans_scaler_path):
+        import joblib
+        loaded_models["kmeans_scaler"] = joblib.load(kmeans_scaler_path)
+        print(f"[Load] KMeans Scaler loaded from: {kmeans_scaler_path}")
 
     print("All available models deserialized successfully!\n")
     return loaded_models

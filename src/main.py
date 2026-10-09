@@ -24,6 +24,7 @@ from src.genre_recommender import GenreRecommender
 from src.artist_recommender import ArtistSimilarityRecommender
 from src.mood_recommender import MoodRecommender
 from src.weighted_recommender import WeightedRecommender
+from src.kmeans_recommender import KMeansRecommender
 
 
 def main():
@@ -134,6 +135,17 @@ def main():
         print(f"[Error] Weighted Hybrid Recommender initialization failed: {e}")
         return
 
+    # Engine 6: K-Means Clustering Recommender
+    print("  -> Initializing K-Means Clustering Recommender...")
+    kmeans_recommender = KMeansRecommender(
+        df=catalog_df, model_dir=models_dir
+    )
+    try:
+        kmeans_recommender.fit()
+    except Exception as e:
+        print(f"[Error] K-Means Recommender initialization failed: {e}")
+        return
+
     # Verification of evaluation datasets
     if os.path.exists(train_path) and os.path.exists(val_path) and os.path.exists(test_path):
         train_rows = pd.read_csv(train_path, usecols=["track_id"]).shape[0]
@@ -153,7 +165,7 @@ def main():
         print("  2. Genre-Specific Recommender (restricts recommendations to the same genre)")
         print("  3. Artist-Similarity Recommender (finds similar artists via token overlap)")
         print("  4. Mood-Based Recommender (finds top songs for a mood)")
-        print("  5. Weighted Hybrid Recommender (combines Audio, Artist, Genre, Popularity)")
+        print("  5. Weighted Hybrid Recommender (combines Audio, K-Means, Artist, Genre, Popularity)")
         print("  6. Exit")
 
         engine_choice = input("\nEnter choice (1-6): ").strip()
@@ -197,7 +209,7 @@ def main():
                 note_str = "Note: Similarity is calculated using Cosine Similarity of audio features within the same genre."
             else:
                 rec_df, err = weighted_recommender.get_weighted_recommendations(song_query, artist_filter, top_n=10)
-                note_str = "Note: Combined score: 50% Audio Similarity + 20% Artist Similarity + 20% Genre Profile + 10% Popularity."
+                note_str = "Note: Combined score: 40% Audio + 15% K-Means Cluster + 20% Artist + 15% Genre + 10% Popularity."
 
         if err:
             print(f"\n[Search Result] {err}")
